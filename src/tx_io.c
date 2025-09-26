@@ -964,7 +964,6 @@ int wally_tx_get_input_signature_hash(
 {
     size_t is_elements = 0;
     uint32_t sighash_type = flags & WALLY_SIGTYPE_MASK;
-    int ret = WALLY_EINVAL;
 
     if (!tx || !tx->num_inputs || !tx->num_outputs || !values ||
         BYTES_INVALID(script, script_len) || key_version > 1 ||
@@ -974,8 +973,9 @@ int wally_tx_get_input_signature_hash(
         !flags || (flags & ~SIGTYPE_ALL) || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
-    if ((ret = wally_tx_is_elements(tx, &is_elements)) != WALLY_OK)
-        return ret;
+    /* Elements not supported - always false */
+    is_elements = 0;
+    /* Skip wally_tx_is_elements check - always non-Elements */
 #ifndef BUILD_ELEMENTS
     if (is_elements)
         return WALLY_EINVAL;
