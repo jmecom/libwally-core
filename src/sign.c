@@ -339,8 +339,9 @@ int wally_ec_sig_from_bytes_aux(const unsigned char *priv_key, size_t priv_key_l
                                 const unsigned char *aux_rand, size_t aux_rand_len,
                                 uint32_t flags, unsigned char *bytes_out, size_t len)
 {
-    wally_ec_nonce_t nonce_fn = wally_ops()->ec_nonce_fn;
-    const secp256k1_context *ctx = secp_ctx();
+    const struct wally_operations *ops = wally_ops();
+    wally_ec_nonce_t nonce_fn = ops->ec_nonce_fn;
+    const secp256k1_context *ctx;
     size_t expected_len;
 
     if (wally_ec_sig_from_bytes_aux_len(priv_key, priv_key_len,
@@ -349,6 +350,15 @@ int wally_ec_sig_from_bytes_aux(const unsigned char *priv_key, size_t priv_key_l
         !bytes_out || len != expected_len)
         return WALLY_EINVAL;
 
+    /* Use custom ECDSA signing function if available and not Schnorr */
+    if (ops->ec_sig_from_bytes_fn && !(flags & EC_FLAG_SCHNORR)) {
+        return ops->ec_sig_from_bytes_fn(priv_key, priv_key_len,
+                                          bytes, bytes_len,
+                                          aux_rand, aux_rand_len,
+                                          flags, bytes_out, len);
+    }
+
+    ctx = secp_ctx();
     if (!ctx)
         return WALLY_ENOMEM;
 
@@ -411,8 +421,9 @@ int wally_ec_sig_verify(const unsigned char *pub_key, size_t pub_key_len,
                         uint32_t flags,
                         const unsigned char *sig, size_t sig_len)
 {
+    const struct wally_operations *ops = wally_ops();
     secp256k1_ecdsa_signature sig_secp;
-    const secp256k1_context *ctx = secp_ctx();
+    const secp256k1_context *ctx;
     bool ok;
 
     if (!pub_key || !bytes || bytes_len != EC_MESSAGE_HASH_LEN ||
@@ -420,6 +431,14 @@ int wally_ec_sig_verify(const unsigned char *pub_key, size_t pub_key_len,
         !sig || sig_len != EC_SIGNATURE_LEN)
         return WALLY_EINVAL;
 
+    /* Use custom ECDSA verification function if available and not Schnorr */
+    if (ops->ec_sig_verify_fn && !(flags & EC_FLAG_SCHNORR)) {
+        return ops->ec_sig_verify_fn(pub_key, pub_key_len,
+                                      bytes, bytes_len,
+                                      flags, sig, sig_len);
+    }
+
+    ctx = secp_ctx();
     if (!ctx)
         return WALLY_ENOMEM;
 

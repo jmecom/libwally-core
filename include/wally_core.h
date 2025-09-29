@@ -428,6 +428,20 @@ typedef int (*wally_get_error_t)(void);
 typedef int (*wally_set_error_t)(
     int error_code);
 
+/** The type of an overridable function to sign a message hash with ECDSA */
+typedef int (*wally_ec_sig_from_bytes_t)(
+    const unsigned char *priv_key, size_t priv_key_len,
+    const unsigned char *bytes, size_t bytes_len,
+    const unsigned char *aux_rand, size_t aux_rand_len,
+    uint32_t flags, unsigned char *bytes_out, size_t len);
+
+/** The type of an overridable function to verify an ECDSA signature */
+typedef int (*wally_ec_sig_verify_t)(
+    const unsigned char *pub_key, size_t pub_key_len,
+    const unsigned char *bytes, size_t bytes_len,
+    uint32_t flags,
+    const unsigned char *sig, size_t sig_len);
+
 /** Structure holding function pointers for overridable wally operations */
 struct wally_operations {
     uintptr_t struct_size; /* Must be initialised to sizeof(wally_operations) */
@@ -438,8 +452,8 @@ struct wally_operations {
     secp_context_t secp_context_fn;
     wally_get_error_t get_error_fn;
     wally_set_error_t set_error_fn;
-    void *reserved_3; /* reserved_ pointers are reserved for future use */
-    void *reserved_4;
+    wally_ec_sig_from_bytes_t ec_sig_from_bytes_fn; /* Custom ECDSA signing function */
+    wally_ec_sig_verify_t ec_sig_verify_fn; /* Custom ECDSA verification function */
 };
 
 /**

@@ -402,8 +402,8 @@ static struct wally_operations _ops = {
     wally_internal_secp_context,
     wally_internal_get_error,
     wally_internal_set_error,
-    NULL,
-    NULL
+    NULL, /* ec_sig_from_bytes_fn */
+    NULL  /* ec_sig_verify_fn */
 };
 
 const secp256k1_context *secp_ctx(void)
@@ -471,10 +471,6 @@ int wally_set_operations(const struct wally_operations *ops)
 {
     if (!ops || ops->struct_size != sizeof(struct wally_operations))
         return WALLY_EINVAL; /* Null or invalid version of ops */
-    /* Reserved pointers must be null so they can be enabled in the
-     * future without breaking back compatibility */
-    if (ops->reserved_3 || ops->reserved_4)
-        return WALLY_EINVAL;
 
 #define COPY_FN_PTR(name) if (ops->name) _ops.name = ops->name
     COPY_FN_PTR(malloc_fn);
@@ -484,6 +480,8 @@ int wally_set_operations(const struct wally_operations *ops)
     COPY_FN_PTR (secp_context_fn);
     COPY_FN_PTR (get_error_fn);
     COPY_FN_PTR (set_error_fn);
+    COPY_FN_PTR (ec_sig_from_bytes_fn);
+    COPY_FN_PTR (ec_sig_verify_fn);
 #undef COPY_FN_PTR
     return WALLY_OK;
 }
